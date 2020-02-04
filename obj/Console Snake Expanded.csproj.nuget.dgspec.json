@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\chris\\Desktop\\Console Snake Expanded\\Console Snake Expanded.csproj": {}
+    "C:\\Users\\chris\\Documents\\GitHub\\Console-Snake-Expanded\\Console Snake Expanded.csproj": {}
   },
   "projects": {
-    "C:\\Users\\chris\\Desktop\\Console Snake Expanded\\Console Snake Expanded.csproj": {
+    "C:\\Users\\chris\\Documents\\GitHub\\Console-Snake-Expanded\\Console Snake Expanded.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\chris\\Desktop\\Console Snake Expanded\\Console Snake Expanded.csproj",
+        "projectUniqueName": "C:\\Users\\chris\\Documents\\GitHub\\Console-Snake-Expanded\\Console Snake Expanded.csproj",
         "projectName": "Console Snake Expanded",
-        "projectPath": "C:\\Users\\chris\\Desktop\\Console Snake Expanded\\Console Snake Expanded.csproj",
+        "projectPath": "C:\\Users\\chris\\Documents\\GitHub\\Console-Snake-Expanded\\Console Snake Expanded.csproj",
         "packagesPath": "C:\\Users\\chris\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\chris\\Desktop\\Console Snake Expanded\\obj\\",
+        "outputPath": "C:\\Users\\chris\\Documents\\GitHub\\Console-Snake-Expanded\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\chris\\AppData\\Roaming\\NuGet\\NuGet.Config"

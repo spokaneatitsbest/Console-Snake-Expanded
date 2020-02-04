@@ -18,7 +18,7 @@ namespace Console_Snake_expanded
     
     class Program
     {
-        public const string Version = "1.2";
+        public const string Version = "1.3";
 
         //private Window window = new Window();
         public static class Globals
@@ -31,7 +31,28 @@ namespace Console_Snake_expanded
             public static int Speed {get;set;} = 100;
             public static int FPS {get;set;}
             public static string Facing {get;set;} = " ";
+            public static int FPSmax {get;set;} = 10;
+            
         }
+
+        public static class SubThreadding
+        {
+            //public static Thread Input = new Thread(() => InputThread());
+            public static Thread Input {get;set;}
+            //public static Thread Manager = new Thread(() => Manager());
+            public static bool InputState {get;set;}
+            
+        }
+        /*public static void Manager()
+        {
+            while (true)
+            {
+                if (SubThreadding.InputState == false)
+                {
+                    
+                }
+            }
+        }*/
 
         public static class Food
         {
@@ -60,8 +81,9 @@ namespace Console_Snake_expanded
             StartMsg("s");
         //initiate secondary thread for input
             Globals.Running = true;
-            Thread subThread_Input = new Thread(() => InputThread());
-            subThread_Input.Start();
+            //Thread subThread_Input = new Thread(() => InputThread());
+            //SubThreadding.Manager.Start();
+            //SubThreadding.Input.Start();
             Initialize();
         }
         public static void StartMsg(string mode){
@@ -72,12 +94,12 @@ namespace Console_Snake_expanded
                 Console.Clear();
                 Console.Write("\n");
             }
-            Console.Write("\r-------------------------\n|   Console Snake v" + Version + "  |\n-------------------------");
+            Console.Write("\r---------------------------------------------------------\n|                    Console Snake v" + Version + "                 |\n---------------------------------------------------------");
             if (mode == "p")
             {
-                Console.Write("\n\n----------PAUSED---------\n----Press h for help-----\n-Press any key to resume-");
+                Console.Write("\n\n--------------------------PAUSED-------------------------\n--------------------Press h for help---------------------\n--------------------Press any key to resume--------------------");
             } else {
-            Console.Write("\n-------How To Play-------\n   * Eat as much as possible, without hitting yourself. \n   * Edges don't kill you, they just loop back to the other side\n   * Use arrow keys to move\n   * Use escape to pause\n   * Press ` to change the speed\n   * Press h to display this message\nPress any key to");
+            Console.Write("\n-----------------------How To Play-----------------------\n   * Eat as much as possible, without hitting yourself. \n   * Edges don't kill you, they just loop back to the other side\n   * Use arrow keys to move\n   * Use escape to pause\n   * Press ` to change the speed\n   * Press h to display this message\nPress any key to");
             }
             if (mode == "r")
             {
@@ -106,6 +128,8 @@ namespace Console_Snake_expanded
         public static void Game(Snake snake)
         {
             Console.Clear();
+            SubThreadding.Input = new Thread(() => InputThread());
+            SubThreadding.Input.Start();
             int millisecondsPast = Convert.ToInt32(DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond % 1000);
             while (Globals.Running == true)
             {
@@ -216,7 +240,7 @@ namespace Console_Snake_expanded
                     }
                     Globals.Render = Globals.Render + "\n";
                 }
-                Globals.Render = Globals.Render + " Score: " + Globals.Score + "                           FPS: " + Globals.FPS + " ";
+                Globals.Render = Globals.Render + $" Score: {Globals.Score}                         FPS: {Globals.FPS}/{Globals.FPSmax} ";
                 Console.Write(Globals.Render);
             //pause
                 while (Globals.Pause == true)
@@ -225,7 +249,7 @@ namespace Console_Snake_expanded
                 }
             //wait (this slows snake)
                 int millisecondsNow = Convert.ToInt32(DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond % 1000);
-                Globals.FPS = 1000/Math.Abs((millisecondsNow-millisecondsPast+Convert.ToInt32(0.000001)));
+                Globals.FPS = 1000/Math.Abs((millisecondsNow-millisecondsPast+Convert.ToInt32(0.00001)));
                 Thread.Sleep(Globals.Speed);
                 millisecondsPast = millisecondsNow;
             
@@ -235,14 +259,16 @@ namespace Console_Snake_expanded
         }
         public static void End()
         {
-            Console.WriteLine("\nGame Over!");
+            //SubThreadding.Input.Interrupt();
+            Console.WriteLine("\nGame Over. Press any key to continue.");
             string FileInput = System.IO.File.ReadAllText(@"Game.dat");
             string FileOutput = FileInput;
             string[] FileData = FileInput.Split('@');
-            Console.WriteLine("Name?");
+            SubThreadding.Input.Join();
             string UserName;
             do
             {
+                Console.WriteLine("Name?");
                 UserName = Console.ReadLine();
             } while (UserName == "" || UserName == " ");
                    
@@ -268,7 +294,7 @@ namespace Console_Snake_expanded
         }
         public static void InputThread()
         {
-            while (true)
+            while (Globals.Running == true)
             {
                 var ch = Console.ReadKey(true).Key;
                 switch(ch)
@@ -313,7 +339,7 @@ namespace Console_Snake_expanded
                         Console.ForegroundColor = ConsoleColor.DarkGreen;
                         Globals.Pause = true;
                         Thread.Sleep(Globals.Speed+50);
-                        Console.Write($"\n\nGame Paused.\nCurrrent speed is {Globals.Speed}. Input new speed (In Miliseconds):");
+                        Console.Write($"\n\nGame Paused.\nCurrrent speed is {Globals.Speed}");
                         int op = 0;
                         string inp;
                         do
@@ -323,6 +349,7 @@ namespace Console_Snake_expanded
                         } while (!int.TryParse(inp, out op));
                         Globals.Speed = Int32.Parse(inp);
                         Console.Clear();
+                        Globals.FPSmax = 1000/Globals.Speed;
                         Globals.Pause = false;
                         Console.ForegroundColor = ConsoleColor.Green;
                         break;
