@@ -8,6 +8,8 @@ using System.Globalization;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
+using System.IO;
+
 
 
 
@@ -222,8 +224,10 @@ namespace Console_Snake_expanded
                     var rand = new Random();
                     Food.x = rand.Next(20)+1;
                     Food.y = rand.Next(20)+1;
-                    snake.Length = snake.Length+1;
                     
+                    
+                    
+                    snake.Length = snake.Length+1;
                 }
 
             //insert food   
@@ -261,9 +265,18 @@ namespace Console_Snake_expanded
         {
             //SubThreadding.Input.Interrupt();
             Console.WriteLine("\nGame Over. Press any key to continue.");
+        //create file
+            if (!File.Exists("Game.dat"))
+            {
+                StreamWriter sw = new StreamWriter(File.Open("Game.dat", System.IO.FileMode.Append));
+                sw.Write("1@default");
+                sw.Close();
+            }
+
             string FileInput = System.IO.File.ReadAllText(@"Game.dat");
             string FileOutput = FileInput;
             string[] FileData = FileInput.Split('@');
+
             SubThreadding.Input.Join();
             string UserName;
             do
