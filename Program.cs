@@ -20,7 +20,7 @@ namespace Console_Snake_expanded
     
     class Program
     {
-        public const string Version = "1.3";
+        public const string Version = "1.4";
 
         //private Window window = new Window();
         public static class Globals
@@ -30,11 +30,10 @@ namespace Console_Snake_expanded
             public static int Score {get;set;} = 1;
             public static string Render {get;set;}
             public static bool Pause {get;set;}
-            public static int Speed {get;set;} = 100;
+            public static int Speed {get;set;}// = 100;
             public static int FPS {get;set;}
             public static string Facing {get;set;} = " ";
-            public static int FPSmax {get;set;} = 10;
-            
+            public static int FPSmax {get;set;}// = 10;
         }
 
         public static class SubThreadding
@@ -62,25 +61,41 @@ namespace Console_Snake_expanded
             public static int y {get;set;}
             
         }
-
+        public static class Settings
+        {
+            public static string silentStart {get;set;} = "false";
+            public static ConsoleColor backCol {get;set;} = ConsoleColor.Black;
+            public static ConsoleColor textCol {get;set;} = ConsoleColor.Green;
+        }
 
         //////////////////////////////////////////////////////
-        
+        static void getSettings()
+        {
+        //create settings file if nonexistant
+            if (!File.Exists("Settings.dat"))
+            {
+                StreamWriter sw = new StreamWriter(File.Open("Settings.dat", System.IO.FileMode.Append));
+                sw.Write("silentStart=false\nbackColor=Black\ntextCol=Green\nDefaultSpeed=100");
+                sw.Write("\n\nList of colors:\nBlack\nDarkBlue\nDarkGreen\nDarkCyan\nDarkRed\nDarkMagenta\nDarkYellow\nGray\nDarkGray\nBlue\nGreen\nCyan\nRed\nMagenta\nYellow\nWhite\nBlack\nDarkBlue\nDarkGreen\nDarkCyan\nDarkRed\nDarkMagenta\nDarkYellow\nGray\nDarkGray\nBlue\nGreen\nCyan\nRed\nMagenta\nYellow\nWhite");
+                sw.Close();
+            }
+            string[] lines = System.IO.File.ReadAllLines("Settings.dat");
+            Settings.silentStart = lines[0].Split("=")[1];
+            Console.BackgroundColor =(ConsoleColor) Enum.Parse(typeof(ConsoleColor), lines[1].Split("=")[1],true);
+            Console.ForegroundColor =(ConsoleColor) Enum.Parse(typeof(ConsoleColor), lines[2].Split("=")[1],true);
+            Globals.Speed = Int32.Parse(lines[3].Split("=")[1]);
+            //Console.WriteLine(lines[3]);
+            Globals.FPSmax = 1000/Globals.Speed;
+        }
         static void Main(string[] args)
         {
+            getSettings();
             Console.OutputEncoding = System.Text.Encoding.UTF8;
-            Console.ForegroundColor = ConsoleColor.Green;
-            Console.BackgroundColor = ConsoleColor.Black;
-        //get speed
-        /*    int op = 0;
-            string inp;
-            do
+            if (Settings.silentStart == "false")
             {
-                Console.Write("Update Speed (miliseconds):  ");
-                inp = Console.ReadLine();
-            } while (!int.TryParse(inp, out op));
-            Globals.Speed = Int32.Parse(inp);*/
-            StartMsg("s");
+                StartMsg("s");
+            }
+            
         //initiate secondary thread for input
             Globals.Running = true;
             //Thread subThread_Input = new Thread(() => InputThread());
@@ -101,7 +116,7 @@ namespace Console_Snake_expanded
             {
                 Console.Write("\n\n--------------------------PAUSED-------------------------\n--------------------Press h for help---------------------\n--------------------Press any key to resume--------------------");
             } else {
-            Console.Write("\n-----------------------How To Play-----------------------\n   * Eat as much as possible, without hitting yourself. \n   * Edges don't kill you, they just loop back to the other side\n   * Use arrow keys to move\n   * Use escape to pause\n   * Press ` to change the speed\n   * Press h to display this message\nPress any key to");
+            Console.Write("\n-----------------------How To Play-----------------------\n   * Eat as much as possible, without hitting yourself. \n   * Edges don't kill you, they just loop back to the other side\n   * Use arrow keys to move\n   * Use escape to pause\n   * Press ` to change the speed\n   * Press h to display this message\n   * Settings are stored in Settings.dat\nPress any key to");
             }
             if (mode == "r")
             {
@@ -349,7 +364,6 @@ namespace Console_Snake_expanded
                         Globals.Pause = false;
                         break;*/
                     case ConsoleKey.Oem3: //grave
-                        Console.ForegroundColor = ConsoleColor.DarkGreen;
                         Globals.Pause = true;
                         Thread.Sleep(Globals.Speed+50);
                         Console.Write($"\n\nGame Paused.\nCurrrent speed is {Globals.Speed}");
@@ -364,7 +378,7 @@ namespace Console_Snake_expanded
                         Console.Clear();
                         Globals.FPSmax = 1000/Globals.Speed;
                         Globals.Pause = false;
-                        Console.ForegroundColor = ConsoleColor.Green;
+                        
                         break;
                     case ConsoleKey.H: //help
                         Globals.Pause = true;
