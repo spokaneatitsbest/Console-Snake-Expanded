@@ -20,7 +20,7 @@ namespace Console_Snake_expanded
     
     class Program
     {
-        public const string Version = "1.4";
+        public const string Version = "1.5";
 
         //private Window window = new Window();
         public static class Globals
@@ -38,27 +38,16 @@ namespace Console_Snake_expanded
 
         public static class SubThreadding
         {
-            //public static Thread Input = new Thread(() => InputThread());
-            public static Thread Input {get;set;}
-            //public static Thread Manager = new Thread(() => Manager());
+            public static Thread Input {get;set;}   
             public static bool InputState {get;set;}
-            
+            public static Thread InsertStuff {get;set;}
+            public static Thread Renderer {get;set;}
         }
-        /*public static void Manager()
-        {
-            while (true)
-            {
-                if (SubThreadding.InputState == false)
-                {
-                    
-                }
-            }
-        }*/
-
         public static class Food
         {
             public static int x {get;set;}
             public static int y {get;set;}
+            public static bool FoodRequested {get;set;} = true;
             
         }
         public static class Settings
@@ -128,6 +117,8 @@ namespace Console_Snake_expanded
             Console.Clear();
             Globals.Pause = false;
         }
+        public static Snake snake;
+        public static Window window;
         public static void Initialize()
         {
             Console.Clear();
@@ -135,22 +126,31 @@ namespace Console_Snake_expanded
             Globals.Running = true;
             Globals.Score = 1;
         //initiate snake
-            Snake snake = new Snake();
+            snake = new Snake();
             var rand = new Random();
             Food.x = rand.Next(10)+1;
             Food.y = rand.Next(10)+1;
             snake.Length = 1;
-            Game(snake);
+            Game();
         }
-        public static void Game(Snake snake)
+        public static void Game()
         {
             Console.Clear();
             SubThreadding.Input = new Thread(() => InputThread());
             SubThreadding.Input.Start();
+            SubThreadding.Renderer = new Thread(() => Console.Write(""));
+            SubThreadding.Renderer.Start();
             int millisecondsPast = Convert.ToInt32(DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond % 1000);
-            while (Globals.Running == true)
+            var rand = new Random();
+            while (Globals.Running == true) //LOOP START////////////////////////////////////////////////////////////
             {
-                Window window = new Window(); //initialize new window
+                window = new Window(); //initialize new window
+                if (Food.FoodRequested == true) { //make food
+                    Food.x = rand.Next(20)+1;
+                    Food.y = rand.Next(20)+1;
+                    Food.FoodRequested = false;
+                }
+
             //rearrange snake array
             
                 for (int s = snake.Length; s > 0; s--) 
@@ -158,6 +158,7 @@ namespace Console_Snake_expanded
                     snake[s,0] = snake[s-1,0];
                     snake[s,1] = snake[s-1,1];
                 }
+        
             //move the snake array
                 switch(Globals.InputKey) {
                     case "LeftArrow": { //left
@@ -211,56 +212,27 @@ namespace Console_Snake_expanded
                     }
                 }
             
-            /*//temp output of snake array
-            //preserved for testing
-                for (int s = 0; s<snake.Length+1; s++) 
-                {
-                    Console.WriteLine(snake[s,0] + ", " + snake[s,1]);
-                }
-                Console.WriteLine("")*/
-            //insert snake into window
-                for (int s = 0; s <= snake.Length; s++) 
-                {
-                    if (window[snake[s,0],snake[s,1]] == " ")
-                    {
-                        window[snake[s,0],snake[s,1]] = "o";
-                    } else {
-                        Globals.Running = false;
-                    }
-                    window[snake[0,0],snake[0,1]] = "o";
-                    
-
-                }
-                
+            /////////////////////////////////////////////////////////////////////////////
+            //insert stuff into window
+                SubThreadding.InsertStuff = new Thread(() => insertStuff());
+                SubThreadding.InsertStuff.Start();
+                //insertStuff();
+                SubThreadding.Renderer = new Thread(() => RenderWindow());
+                SubThreadding.Renderer.Start();
+            /////////////////////////////////////////////////////////////////////////////
             //check food collision 
                 if (snake[0,0] == Food.x && snake[0,1] == Food.y)
                 {
                     Globals.Score = Globals.Score + 1;
-                    var rand = new Random();
-                    Food.x = rand.Next(20)+1;
-                    Food.y = rand.Next(20)+1;
-                    
-                    
-                    
+                    Food.FoodRequested = true;
                     snake.Length = snake.Length+1;
                 }
 
-            //insert food   
-                window[Food.x,Food.y] = "*";
-            //final render - Depricated
-            //efficient array
-                Globals.Render = "\r Console Snake		     Version " + Version + "\n";
-                Console.SetCursorPosition(0, 0);
-                for (int x = 0; x <= 21; x++)
-                {
-                    for (int y = 0; y <= 21; y++) 
-                    {
-                        Globals.Render = Globals.Render + window[x,y] + " ";
-                    }
-                    Globals.Render = Globals.Render + "\n";
-                }
-                Globals.Render = Globals.Render + $" Score: {Globals.Score}                         FPS: {Globals.FPS}/{Globals.FPSmax} ";
-                Console.Write(Globals.Render);
+            
+
+
+                                
+                //RenderWindow();
             //pause
                 while (Globals.Pause == true)
                 {
@@ -271,11 +243,47 @@ namespace Console_Snake_expanded
                 Globals.FPS = 1000/Math.Abs((millisecondsNow-millisecondsPast+Convert.ToInt32(0.00001)));
                 Thread.Sleep(Globals.Speed);
                 millisecondsPast = millisecondsNow;
+            //confirm multithread termination
+                SubThreadding.InsertStuff.Join();
+                SubThreadding.Renderer.Join();
+
             
             }
             //end loop
             End();
         }
+        public static void RenderWindow()
+        {
+            Globals.Render = "\r Console Snake		     Version " + Version + "\n";
+            Console.SetCursorPosition(0, 0);
+            for (int x = 0; x <= 21; x++)
+            {
+                for (int y = 0; y <= 21; y++) 
+                {
+                    Globals.Render = Globals.Render + window[x,y] + " ";
+                }
+                Globals.Render = Globals.Render + "\n";
+            }
+            Globals.Render = Globals.Render + $" Score: {Globals.Score}                         FPS: {Globals.FPS}/{Globals.FPSmax} ";
+            Console.Write(Globals.Render);
+        }
+        public static void insertStuff()
+        {
+        //insert food
+            window[Food.x,Food.y] = "*";
+        //snake
+            for (int s = 0; s <= snake.Length; s++) 
+            {
+                if (window[snake[s,0],snake[s,1]] == " " || window[snake[s,0],snake[s,1]] == "*")
+                {
+                    window[snake[s,0],snake[s,1]] = "o";
+                } else {
+                    Globals.Running = false;
+                }
+                window[snake[0,0],snake[0,1]] = "o";
+            }
+        }
+        
         public static void End()
         {
             //SubThreadding.Input.Interrupt();
