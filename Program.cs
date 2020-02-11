@@ -288,9 +288,10 @@ namespace Console_Snake_expanded
                 sw.Close();
             }
 
-            string FileInput = System.IO.File.ReadAllText(@"Game.dat");
-            string FileOutput = FileInput;
-            string[] FileData = FileInput.Split('@');
+            string[] FileInput = System.IO.File.ReadAllLines("Game.dat");
+            string FileOutput = "";
+            //line format
+            //score@name@gamespeed
 
             SubThreadding.Input.Join();
             string UserName;
@@ -300,16 +301,23 @@ namespace Console_Snake_expanded
                 UserName = Console.ReadLine();
             } while (UserName == "" || UserName == " ");
                    
-            if (Convert.ToInt32(FileData[0]) < Globals.Score)
+            if (Convert.ToInt32(FileInput[0].Split("@")[0]) < Globals.Score)
             {
-                
-                FileOutput = Globals.Score.ToString() + "@" + UserName + "@" + FileOutput;
-                System.IO.File.WriteAllText (@"Game.dat", FileOutput);       
+                FileOutput = $"{Globals.Score.ToString()}@{UserName}@{Globals.Speed.ToString()}\n";
+                for (int i=0;i<FileInput.Length;i++)
+                {
+                    FileOutput = FileOutput + FileInput[i] + "\n";
+                }
+                System.IO.File.WriteAllText (@"Game.dat", FileOutput);
                 Console.WriteLine("You have the high score of " + Globals.Score);    
             } else {
-                FileOutput = FileOutput + "@" + Globals.Score.ToString() + "@" + UserName;
+                for (int i=0;i<FileInput.Length;i++)
+                {
+                    FileOutput = FileOutput + FileInput[i] + "\n";
+                }
+                FileOutput = $"{Globals.Score.ToString()}@{UserName}@{Globals.Speed.ToString()}\n";
                 System.IO.File.WriteAllText (@"Game.dat", FileOutput);
-                Console.WriteLine("Your Score was " + Globals.Score + ". The high score is " + FileData[0] + ", set by " + FileData[1]);
+                Console.WriteLine("Your Score was " + Globals.Score + ". The high score is " + FileInput[0].Split("@")[0] + ", set by " + FileInput[0].Split("@")[1]);
             }
             Console.WriteLine("Play again? (y/n)");
             string YN = Console.ReadLine();
