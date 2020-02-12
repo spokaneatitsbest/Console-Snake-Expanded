@@ -31,6 +31,7 @@ namespace Console_Snake_expanded
             public static string Render {get;set;}
             public static bool Pause {get;set;}
             public static int Speed {get;set;}// = 100;
+            public static int SpeedGoal {get;set;}
             public static int FPS {get;set;}
             public static string Facing {get;set;} = " ";
             public static int FPSmax {get;set;}// = 10;
@@ -73,6 +74,7 @@ namespace Console_Snake_expanded
             Console.BackgroundColor =(ConsoleColor) Enum.Parse(typeof(ConsoleColor), lines[1].Split("=")[1],true);
             Console.ForegroundColor =(ConsoleColor) Enum.Parse(typeof(ConsoleColor), lines[2].Split("=")[1],true);
             Globals.Speed = Int32.Parse(lines[3].Split("=")[1]);
+            Globals.SpeedGoal = Globals.Speed;
             //Console.WriteLine(lines[3]);
             Globals.FPSmax = 1000/Globals.Speed;
         }
@@ -149,6 +151,7 @@ namespace Console_Snake_expanded
                     Food.x = rand.Next(20)+1;
                     Food.y = rand.Next(20)+1;
                     Food.FoodRequested = false;
+                    
                 }
 
             //rearrange snake array
@@ -225,6 +228,8 @@ namespace Console_Snake_expanded
                 {
                     Globals.Score = Globals.Score + 1;
                     Food.FoodRequested = true;
+                    //Food.x = rand.Next(20)+1;
+                    //Food.y = rand.Next(20)+1;
                     snake.Length = snake.Length+1;
                 }
 
@@ -239,14 +244,23 @@ namespace Console_Snake_expanded
                    Thread.Sleep(100);
                 }
             //wait (this slows snake)
+                
                 int millisecondsNow = Convert.ToInt32(DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond % 1000);
                 Globals.FPS = 1000/Math.Abs((millisecondsNow-millisecondsPast+Convert.ToInt32(0.00001)));
+                //Console.Write($"{millisecondsNow-millisecondsPast}, {Globals.SpeedGoal - (millisecondsNow-millisecondsPast)}, {Globals.SpeedGoal}");
+                //Console.Write(Math.Abs(Globals.Speed - (millisecondsNow-millisecondsPast)));
                 Thread.Sleep(Globals.Speed);
                 millisecondsPast = millisecondsNow;
             //confirm multithread termination
                 SubThreadding.InsertStuff.Join();
                 SubThreadding.Renderer.Join();
-
+                
+                /*if (Globals.FPS < .8*Globals.FPSmax)
+                {
+                    Globals.Speed = Globals.Speed-1;
+                    Console.Write($"Speed Adjusted to {Globals.Speed}. {Globals.FPS} {Globals.FPSmax}");
+                }*/
+                
             
             }
             //end loop
@@ -266,6 +280,7 @@ namespace Console_Snake_expanded
             }
             Globals.Render = Globals.Render + $" Score: {Globals.Score}                         FPS: {Globals.FPS}/{Globals.FPSmax} ";
             Console.Write(Globals.Render);
+            
         }
         public static void insertStuff()
         {
@@ -274,9 +289,12 @@ namespace Console_Snake_expanded
         //snake
             for (int s = 0; s <= snake.Length; s++) 
             {
-                if (window[snake[s,0],snake[s,1]] == " " || window[snake[s,0],snake[s,1]] == "*")
+                if (window[snake[s,0],snake[s,1]] == " ")
                 {
                     window[snake[s,0],snake[s,1]] = "o";
+                } else if (window[snake[s,0],snake[s,1]] == "*") {
+                    window[snake[s,0],snake[s,1]] = "o";
+                    Food.FoodRequested = true;
                 } else {
                     Globals.Running = false;
                 }
@@ -297,6 +315,7 @@ namespace Console_Snake_expanded
             }
 
             string[] FileInput = System.IO.File.ReadAllLines("Game.dat");
+            
             string FileOutput = "";
             //line format
             //score@name@gamespeed
@@ -317,13 +336,14 @@ namespace Console_Snake_expanded
                     FileOutput = FileOutput + FileInput[i] + "\n";
                 }
                 System.IO.File.WriteAllText (@"Game.dat", FileOutput);
-                Console.WriteLine("You have the high score of " + Globals.Score);    
+                Console.WriteLine($"{UserName}, you have the high score of " + Globals.Score);    
             } else {
                 for (int i=0;i<FileInput.Length;i++)
                 {
                     FileOutput = FileOutput + FileInput[i] + "\n";
+                    //Console.Write(FileOutput);
                 }
-                FileOutput = $"{Globals.Score.ToString()}@{UserName}@{Globals.Speed.ToString()}\n";
+                FileOutput = FileOutput + $"{Globals.Score.ToString()}@{UserName}@{Globals.Speed.ToString()}\n";
                 System.IO.File.WriteAllText (@"Game.dat", FileOutput);
                 Console.WriteLine("Your Score was " + Globals.Score + ". The high score is " + FileInput[0].Split("@")[0] + ", set by " + FileInput[0].Split("@")[1]);
             }
@@ -391,6 +411,7 @@ namespace Console_Snake_expanded
                             inp = Console.ReadLine();
                         } while (!int.TryParse(inp, out op));
                         Globals.Speed = Int32.Parse(inp);
+                        Globals.SpeedGoal = Globals.Speed;
                         Console.Clear();
                         Globals.FPSmax = 1000/Globals.Speed;
                         Globals.Pause = false;
@@ -408,18 +429,6 @@ namespace Console_Snake_expanded
             }
         }
 
-      /*  public static void FPScalc()
-        {
-            while (Globals.Running == true)
-            {
-                int millisecondsPast = Convert.ToInt32(DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond % 1000);
-                while (Globals.Pause == false)
-                {
-                    int millisecondsNow = Convert.ToInt32(DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond % 1000);
-                    Globals.FPS = Math.Abs((millisecondsNow-millisecondsPast));
-                }
-            }
-        }*/
     }
 
 }
