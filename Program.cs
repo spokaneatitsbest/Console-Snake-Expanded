@@ -14,28 +14,26 @@ using System.IO;
 
 
 namespace Console_Snake_expanded
-{
-
-        
-    
+{ 
+    public static class Globals
+    {
+        public static string InputKey {get;set;} = "DownArrow";
+        public static bool Running {get;set;}
+        public static int Score {get;set;} = 1;
+        public static string Render {get;set;}
+        public static bool Pause {get;set;}
+        public static int Speed {get;set;}// = 100;
+        public static int SpeedGoal {get;set;}
+        public static int FPS {get;set;}
+        public static string Facing {get;set;} = " ";
+        public static int FPSmax {get;set;}// = 10;
+    }
     class Program
     {
         public const string Version = "1.5";
 
         //private Window window = new Window();
-        public static class Globals
-        {
-            public static string InputKey {get;set;} = "DownArrow";
-            public static bool Running {get;set;}
-            public static int Score {get;set;} = 1;
-            public static string Render {get;set;}
-            public static bool Pause {get;set;}
-            public static int Speed {get;set;}// = 100;
-            public static int SpeedGoal {get;set;}
-            public static int FPS {get;set;}
-            public static string Facing {get;set;} = " ";
-            public static int FPSmax {get;set;}// = 10;
-        }
+        
 
         public static class SubThreadding
         {
@@ -148,10 +146,11 @@ namespace Console_Snake_expanded
             {
                 window = new Window(); //initialize new window
                 if (Food.FoodRequested == true) { //make food
+                    do {
                     Food.x = rand.Next(20)+1;
                     Food.y = rand.Next(20)+1;
+                    } while (FoodCollision() == false);
                     Food.FoodRequested = false;
-                    
                 }
 
             //rearrange snake array
@@ -355,6 +354,21 @@ namespace Console_Snake_expanded
             } else {
                 System.Environment.Exit(0);
             }
+        }
+        public static bool FoodCollision()
+        {
+            //bool foodState = false;
+            for (int i=0; i<= snake.Length; i++)
+            {
+                if (snake[i,0] == Food.x)
+                {
+                    if (snake[i,1] == Food.y)
+                    {
+                        return false;
+                    }
+                }
+            }
+            return true;
         }
         public static void InputThread()
         {
