@@ -245,7 +245,13 @@ namespace Console_Snake_expanded
             //wait (this slows snake)
                 
                 int millisecondsNow = Convert.ToInt32(DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond % 1000);
-                Globals.FPS = 1000/Math.Abs((millisecondsNow-millisecondsPast+Convert.ToInt32(0.00001)));
+                try {
+                    Globals.FPS = 1000/Math.Abs((millisecondsNow-millisecondsPast+Convert.ToInt32(0.00001)));
+                }
+                catch (DivideByZeroException) {
+                    //Globals.FPS = 1;
+                    continue;
+                }
                 //Console.Write($"{millisecondsNow-millisecondsPast}, {Globals.SpeedGoal - (millisecondsNow-millisecondsPast)}, {Globals.SpeedGoal}");
                 //Console.Write(Math.Abs(Globals.Speed - (millisecondsNow-millisecondsPast)));
                 Thread.Sleep(Globals.Speed);
@@ -350,6 +356,8 @@ namespace Console_Snake_expanded
             string YN = Console.ReadLine();
             if (YN == "y")
             {
+                Initialize();
+            } else if (YN == "Y") {
                 Initialize();
             } else {
                 System.Environment.Exit(0);
