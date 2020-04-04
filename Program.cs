@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading;
 using System.Windows.Input;
+using System.Diagnostics;
 
 using System.Collections.Generic;
 using System.Drawing;
@@ -27,10 +28,11 @@ namespace Console_Snake_expanded
         public static int FPS {get;set;}
         public static string Facing {get;set;} = " ";
         public static int FPSmax {get;set;}// = 10;
+        public static bool EdgeKill {get;set;} = false;
     }
     class Program
     {
-        public const string Version = "1.5";
+        public const string Version = "1.6";
 
         //private Window window = new Window();
         
@@ -63,7 +65,7 @@ namespace Console_Snake_expanded
             if (!File.Exists("Settings.dat"))
             {
                 StreamWriter sw = new StreamWriter(File.Open("Settings.dat", System.IO.FileMode.Append));
-                sw.Write("silentStart=false\nbackColor=Black\ntextCol=Green\nDefaultSpeed=100");
+                sw.Write("silentStart=false\nbackColor=Black\ntextCol=Green\nDefaultSpeed=100\nEdgeKill=false");
                 sw.Write("\n\nList of colors:\nBlack\nDarkBlue\nDarkGreen\nDarkCyan\nDarkRed\nDarkMagenta\nDarkYellow\nGray\nDarkGray\nBlue\nGreen\nCyan\nRed\nMagenta\nYellow\nWhite\nBlack\nDarkBlue\nDarkGreen\nDarkCyan\nDarkRed\nDarkMagenta\nDarkYellow\nGray\nDarkGray\nBlue\nGreen\nCyan\nRed\nMagenta\nYellow\nWhite");
                 sw.Close();
             }
@@ -72,6 +74,7 @@ namespace Console_Snake_expanded
             Console.BackgroundColor =(ConsoleColor) Enum.Parse(typeof(ConsoleColor), lines[1].Split("=")[1],true);
             Console.ForegroundColor =(ConsoleColor) Enum.Parse(typeof(ConsoleColor), lines[2].Split("=")[1],true);
             Globals.Speed = Int32.Parse(lines[3].Split("=")[1]);
+            Globals.EdgeKill = bool.Parse(lines[4].Split("=")[1]);
             Globals.SpeedGoal = Globals.Speed;
             //Console.WriteLine(lines[3]);
             Globals.FPSmax = 1000/Globals.Speed;
@@ -90,7 +93,7 @@ namespace Console_Snake_expanded
             //Thread subThread_Input = new Thread(() => InputThread());
             //SubThreadding.Manager.Start();
             //SubThreadding.Input.Start();
-            Initialize();
+            Initialize(Globals.EdgeKill);
         }
         public static void StartMsg(string mode){
         //Explain
@@ -105,7 +108,7 @@ namespace Console_Snake_expanded
             {
                 Console.Write("\n\n--------------------------PAUSED-------------------------\n--------------------Press h for help---------------------\n--------------------Press any key to resume--------------------");
             } else {
-            Console.Write("\n-----------------------How To Play-----------------------\n   * Eat as much as possible, without hitting yourself. \n   * Edges don't kill you, they just loop back to the other side\n   * Use arrow keys to move\n   * Use escape to pause\n   * Press ` to change the speed\n   * Press h to display this message\n   * Settings are stored in Settings.dat\nPress any key to");
+            Console.Write("\n-----------------------How To Play-----------------------\n   * Eat as much as possible, without hitting yourself. \n   * Use arrow keys to move\n   * Use escape to pause\n   * Press ` to change the speed\n   * Press h to display this message\n   * Settings are stored in Settings.dat\n   * Press F3 to edit settings. \nPress any key to");
             }
             if (mode == "r")
             {
@@ -119,7 +122,7 @@ namespace Console_Snake_expanded
         }
         public static Snake snake;
         public static Window window;
-        public static void Initialize()
+        public static void Initialize(bool EdgeKill)
         {
             Console.Clear();
             Globals.Pause = false;
@@ -131,9 +134,9 @@ namespace Console_Snake_expanded
             Food.x = rand.Next(10)+1;
             Food.y = rand.Next(10)+1;
             snake.Length = 1;
-            Game();
+            Game(EdgeKill);
         }
-        public static void Game()
+        public static void Game(bool EdgeKill)
         {
             Console.Clear();
             SubThreadding.Input = new Thread(() => InputThread());
@@ -142,133 +145,269 @@ namespace Console_Snake_expanded
             SubThreadding.Renderer.Start();
             int millisecondsPast = Convert.ToInt32(DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond % 1000);
             var rand = new Random();
-            while (Globals.Running == true) //LOOP START////////////////////////////////////////////////////////////
-            {
-                window = new Window(); //initialize new window
-                if (Food.FoodRequested == true) { //make food
-                    do {
-                    Food.x = rand.Next(20)+1;
-                    Food.y = rand.Next(20)+1;
-                    } while (FoodCollision() == false);
-                    Food.FoodRequested = false;
-                }
+            if (EdgeKill == true){
+                while (Globals.Running == true) //LOOP START////////////////////////////////////////////////////////////
+                    {
+                    window = new Window(); //initialize new window
+                    if (Food.FoodRequested == true) { //make food
+                        do {
+                        Food.x = rand.Next(20)+1;
+                        Food.y = rand.Next(20)+1;
+                        } while (FoodCollision() == false);
+                        Food.FoodRequested = false;
+                    }
 
-            //rearrange snake array
+                //rearrange snake array
+                
+                    for (int s = snake.Length; s > 0; s--) 
+                    {
+                        snake[s,0] = snake[s-1,0];
+                        snake[s,1] = snake[s-1,1];
+                    }
             
-                for (int s = snake.Length; s > 0; s--) 
+                //move the snake array
+                    switch(Globals.InputKey) {
+                        case "LeftArrow": { //left
+                            Globals.Facing = "Left";
+                            if (snake[1,1]-1 == 0) //loop
+                            {
+                                //snake[0,0] = snake[1,0];
+                                //snake[0,1] = 20;
+                                Globals.Running = false;
+                                //Console.Write("loop");
+                            } else {
+                                snake[0,0] = snake[1,0];
+                                snake[0,1] = snake[1,1]-1;
+                            }
+                            break;
+                        }
+                        case "RightArrow": { //Right
+                            Globals.Facing = "Right";
+                            if (snake[1,1]+1 == 21) //loop
+                            {
+                                //snake[0,0] = snake[1,0];
+                                //snake[0,1] = 1;
+                                Globals.Running = false;
+                                //Console.Write("loop");
+                            } else {
+                                snake[0,0] = snake[1,0];
+                                snake[0,1] = snake[1,1]+1;
+                            }
+                            break;
+                        }
+                        case "UpArrow": { //Up
+                            Globals.Facing = "Up";
+                            if (snake[1,0]-1 == 0) //loop
+                            {
+                                //snake[0,0] = 20;
+                                //snake[0,1] = snake[1,1];
+                                Globals.Running = false;
+                                //Console.Write("loop");
+                            } else {
+                                snake[0,0] = snake[1,0]-1;
+                                snake[0,1] = snake[1,1];
+                            }
+                            break;
+                        }
+                        case "DownArrow": { //Down
+                            Globals.Facing = "Down";
+                            if (snake[1,0]+1 == 21)
+                            {
+                                //snake[0,0] = 1;
+                                //snake[0,1] = snake[1,1];
+                                Globals.Running = false;
+                                Console.Write("loop");
+                            } else {
+                                snake[0,0] = snake[1,0]+1;
+                                snake[0,1] = snake[1,1];
+                            }
+                            break;
+                        }
+                    }
+                
+                /////////////////////////////////////////////////////////////////////////////
+                //insert stuff into window
+                    SubThreadding.InsertStuff = new Thread(() => insertStuff());
+                    SubThreadding.InsertStuff.Start();
+                    //insertStuff();
+                    SubThreadding.Renderer = new Thread(() => RenderWindow());
+                    SubThreadding.Renderer.Start();
+                /////////////////////////////////////////////////////////////////////////////
+                //check food collision 
+                    if (snake[0,0] == Food.x && snake[0,1] == Food.y)
+                    {
+                        Globals.Score = Globals.Score + 1;
+                        Food.FoodRequested = true;
+                        //Food.x = rand.Next(20)+1;
+                        //Food.y = rand.Next(20)+1;
+                        snake.Length = snake.Length+1;
+                    }
+
+                
+
+
+                                    
+                    //RenderWindow();
+                //pause
+                    while (Globals.Pause == true)
+                    {
+                    Thread.Sleep(100);
+                    }
+                //wait (this slows snake)
+                    
+                    int millisecondsNow = Convert.ToInt32(DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond % 1000);
+                    try {
+                        Globals.FPS = 1000/Math.Abs((millisecondsNow-millisecondsPast+Convert.ToInt32(0.00001)));
+                    }
+                    catch (DivideByZeroException) {
+                        //Globals.FPS = 1;
+                        continue;
+                    }
+                    //Console.Write($"{millisecondsNow-millisecondsPast}, {Globals.SpeedGoal - (millisecondsNow-millisecondsPast)}, {Globals.SpeedGoal}");
+                    //Console.Write(Math.Abs(Globals.Speed - (millisecondsNow-millisecondsPast)));
+                    Thread.Sleep(Globals.Speed);
+                    millisecondsPast = millisecondsNow;
+                //confirm multithread termination
+                    SubThreadding.InsertStuff.Join();
+                    SubThreadding.Renderer.Join();
+                    
+                    /*if (Globals.FPS < .8*Globals.FPSmax)
+                    {
+                        Globals.Speed = Globals.Speed-1;
+                        Console.Write($"Speed Adjusted to {Globals.Speed}. {Globals.FPS} {Globals.FPSmax}");
+                    }*/
+                    
+                
+                }
+            } else {
+                while (Globals.Running == true) //LOOP START////////////////////////////////////////////////////////////
                 {
-                    snake[s,0] = snake[s-1,0];
-                    snake[s,1] = snake[s-1,1];
-                }
-        
-            //move the snake array
-                switch(Globals.InputKey) {
-                    case "LeftArrow": { //left
-                        Globals.Facing = "Left";
-                        if (snake[1,1]-1 == 0) //loop
-                        {
-                            
-                            snake[0,0] = snake[1,0];
-                            snake[0,1] = 20;
-                        } else {
-                            snake[0,0] = snake[1,0];
-                            snake[0,1] = snake[1,1]-1;
-                        }
-                        break;
+                    window = new Window(); //initialize new window
+                    if (Food.FoodRequested == true) { //make food
+                        do {
+                        Food.x = rand.Next(20)+1;
+                        Food.y = rand.Next(20)+1;
+                        } while (FoodCollision() == false);
+                        Food.FoodRequested = false;
                     }
-                    case "RightArrow": { //Right
-                        Globals.Facing = "Right";
-                        if (snake[1,1]+1 == 21) //loop
-                        {
-                            snake[0,0] = snake[1,0];
-                            snake[0,1] = 1;
-                        } else {
-                            snake[0,0] = snake[1,0];
-                            snake[0,1] = snake[1,1]+1;
-                        }
-                        break;
+
+                //rearrange snake array
+                
+                    for (int s = snake.Length; s > 0; s--) 
+                    {
+                        snake[s,0] = snake[s-1,0];
+                        snake[s,1] = snake[s-1,1];
                     }
-                    case "UpArrow": { //Up
-                        Globals.Facing = "Up";
-                        if (snake[1,0]-1 == 0) //loop
-                        {
-                            snake[0,0] = 20;
-                            snake[0,1] = snake[1,1];
-                        } else {
-                            snake[0,0] = snake[1,0]-1;
-                            snake[0,1] = snake[1,1];
-                        }
-                        break;
-                    }
-                    case "DownArrow": { //Down
-                        Globals.Facing = "Down";
-                        if (snake[1,0]+1 == 21)
-                        {
-                            snake[0,0] = 1;
-                            snake[0,1] = snake[1,1];
-                        } else {
-                            snake[0,0] = snake[1,0]+1;
-                            snake[0,1] = snake[1,1];
-                        }
-                        break;
-                    }
-                }
             
-            /////////////////////////////////////////////////////////////////////////////
-            //insert stuff into window
-                SubThreadding.InsertStuff = new Thread(() => insertStuff());
-                SubThreadding.InsertStuff.Start();
-                //insertStuff();
-                SubThreadding.Renderer = new Thread(() => RenderWindow());
-                SubThreadding.Renderer.Start();
-            /////////////////////////////////////////////////////////////////////////////
-            //check food collision 
-                if (snake[0,0] == Food.x && snake[0,1] == Food.y)
-                {
-                    Globals.Score = Globals.Score + 1;
-                    Food.FoodRequested = true;
-                    //Food.x = rand.Next(20)+1;
-                    //Food.y = rand.Next(20)+1;
-                    snake.Length = snake.Length+1;
-                }
-
-            
-
-
+                //move the snake array
+                    switch(Globals.InputKey) {
+                        case "LeftArrow": { //left
+                            Globals.Facing = "Left";
+                            if (snake[1,1]-1 == 0) //loop
+                            {
                                 
-                //RenderWindow();
-            //pause
-                while (Globals.Pause == true)
-                {
-                   Thread.Sleep(100);
-                }
-            //wait (this slows snake)
+                                snake[0,0] = snake[1,0];
+                                snake[0,1] = 20;
+                            } else {
+                                snake[0,0] = snake[1,0];
+                                snake[0,1] = snake[1,1]-1;
+                            }
+                            break;
+                        }
+                        case "RightArrow": { //Right
+                            Globals.Facing = "Right";
+                            if (snake[1,1]+1 == 21) //loop
+                            {
+                                snake[0,0] = snake[1,0];
+                                snake[0,1] = 1;
+                            } else {
+                                snake[0,0] = snake[1,0];
+                                snake[0,1] = snake[1,1]+1;
+                            }
+                            break;
+                        }
+                        case "UpArrow": { //Up
+                            Globals.Facing = "Up";
+                            if (snake[1,0]-1 == 0) //loop
+                            {
+                                snake[0,0] = 20;
+                                snake[0,1] = snake[1,1];
+                            } else {
+                                snake[0,0] = snake[1,0]-1;
+                                snake[0,1] = snake[1,1];
+                            }
+                            break;
+                        }
+                        case "DownArrow": { //Down
+                            Globals.Facing = "Down";
+                            if (snake[1,0]+1 == 21)
+                            {
+                                snake[0,0] = 1;
+                                snake[0,1] = snake[1,1];
+                            } else {
+                                snake[0,0] = snake[1,0]+1;
+                                snake[0,1] = snake[1,1];
+                            }
+                            break;
+                        }
+                    }
                 
-                int millisecondsNow = Convert.ToInt32(DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond % 1000);
-                try {
-                    Globals.FPS = 1000/Math.Abs((millisecondsNow-millisecondsPast+Convert.ToInt32(0.00001)));
-                }
-                catch (DivideByZeroException) {
-                    //Globals.FPS = 1;
-                    continue;
-                }
-                //Console.Write($"{millisecondsNow-millisecondsPast}, {Globals.SpeedGoal - (millisecondsNow-millisecondsPast)}, {Globals.SpeedGoal}");
-                //Console.Write(Math.Abs(Globals.Speed - (millisecondsNow-millisecondsPast)));
-                Thread.Sleep(Globals.Speed);
-                millisecondsPast = millisecondsNow;
-            //confirm multithread termination
-                SubThreadding.InsertStuff.Join();
-                SubThreadding.Renderer.Join();
+                /////////////////////////////////////////////////////////////////////////////
+                //insert stuff into window
+                    SubThreadding.InsertStuff = new Thread(() => insertStuff());
+                    SubThreadding.InsertStuff.Start();
+                    //insertStuff();
+                    SubThreadding.Renderer = new Thread(() => RenderWindow());
+                    SubThreadding.Renderer.Start();
+                /////////////////////////////////////////////////////////////////////////////
+                //check food collision 
+                    if (snake[0,0] == Food.x && snake[0,1] == Food.y)
+                    {
+                        Globals.Score = Globals.Score + 1;
+                        Food.FoodRequested = true;
+                        //Food.x = rand.Next(20)+1;
+                        //Food.y = rand.Next(20)+1;
+                        snake.Length = snake.Length+1;
+                    }
+
                 
-                /*if (Globals.FPS < .8*Globals.FPSmax)
-                {
-                    Globals.Speed = Globals.Speed-1;
-                    Console.Write($"Speed Adjusted to {Globals.Speed}. {Globals.FPS} {Globals.FPSmax}");
-                }*/
+
+
+                                    
+                    //RenderWindow();
+                //pause
+                    while (Globals.Pause == true)
+                    {
+                    Thread.Sleep(100);
+                    }
+                //wait (this slows snake)
+                    
+                    int millisecondsNow = Convert.ToInt32(DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond % 1000);
+                    try {
+                        Globals.FPS = 1000/Math.Abs((millisecondsNow-millisecondsPast+Convert.ToInt32(0.00001)));
+                    }
+                    catch (DivideByZeroException) {
+                        //Globals.FPS = 1;
+                        continue;
+                    }
+                    //Console.Write($"{millisecondsNow-millisecondsPast}, {Globals.SpeedGoal - (millisecondsNow-millisecondsPast)}, {Globals.SpeedGoal}");
+                    //Console.Write(Math.Abs(Globals.Speed - (millisecondsNow-millisecondsPast)));
+                    Thread.Sleep(Globals.Speed);
+                    millisecondsPast = millisecondsNow;
+                //confirm multithread termination
+                    SubThreadding.InsertStuff.Join();
+                    SubThreadding.Renderer.Join();
+                    
+                    /*if (Globals.FPS < .8*Globals.FPSmax)
+                    {
+                        Globals.Speed = Globals.Speed-1;
+                        Console.Write($"Speed Adjusted to {Globals.Speed}. {Globals.FPS} {Globals.FPSmax}");
+                    }*/
+                    
                 
-            
-            }
-            //end loop
+                }
+            }//end loop
+
             End();
         }
         public static void RenderWindow()
@@ -356,9 +495,9 @@ namespace Console_Snake_expanded
             string YN = Console.ReadLine();
             if (YN == "y")
             {
-                Initialize();
+                Initialize(Globals.EdgeKill);
             } else if (YN == "Y") {
-                Initialize();
+                Initialize(Globals.EdgeKill);
             } else {
                 System.Environment.Exit(0);
             }
@@ -436,6 +575,16 @@ namespace Console_Snake_expanded
                         Globals.SpeedGoal = Globals.Speed;
                         Console.Clear();
                         Globals.FPSmax = 1000/Globals.Speed;
+                        Globals.Pause = false;
+                        
+                        break;
+                    case ConsoleKey.F3: //F3
+                        Globals.Pause = true;
+                        Thread.Sleep(Globals.Speed+50);
+                        Console.Write($"\n\nGame Paused.\nOpening Settings\nPress any key to continue");
+                        System.Diagnostics.Process.Start(@"\Settings.dat");
+                        inp = Console.ReadLine();
+                        Console.Clear();
                         Globals.Pause = false;
                         
                         break;
